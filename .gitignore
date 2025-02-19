@@ -169,3 +169,14 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+<<<<<<< HEAD
+=======
+
+
+5차본/
+past_data/
+recent_data/
+result/
+result_v3/
+keyword/
+>>>>>>> 0563d22 (초기 코드 업로드)
