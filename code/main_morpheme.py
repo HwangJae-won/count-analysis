@@ -13,7 +13,7 @@ from emotion import analyze_sentiment_with_context, extract_context_sentences
 def main():
     # 기본 경로 설정
     base_dir = "/Users/hwangjaewon/Downloads/count_analylsis/"
-    recent_data_path = os.path.join(base_dir, "recent_data")
+    recent_data_path = os.path.join(base_dir "final_data")
     result_base_path = os.path.join(base_dir, "result_v3")
     stopwords_path = os.path.join(base_dir, "stopwords.txt")
     word_mapping_path = os.path.join(base_dir, "word_mapping.txt")

@@ -31,21 +31,28 @@ def filter_tokens_for_network(tokens, stopwords):
 
 
 def build_cooccurrence_network(tokens, stopwords, frequencies, window_size=3):
-    """
-    필터링된 단어를 사용해 동시 출현 네트워크 생성
-    - tokens: 필터링되지 않은 토큰 리스트
-    - stopwords: 불용어 리스트
-    - window_size: 동시 출현 윈도우 크기
-    """
+    """동시 출현 네트워크 생성"""
+    edges = []  # ✅ 기본값으로 빈 리스트 설정
+
     try:
-        # 한 글자 및 불용어 필터링
-        filtered_tokens = filter_tokens_for_network(tokens, stopwords)
+        # 불용어 필터링
+        filtered_tokens = [word for word in tokens if word not in stopwords]
 
         # 빈도 상위 100개 단어 리스트 가져오기
-        top_100_words = set([word for word, _ in frequencies[:100]])
+        if isinstance(frequencies, dict):
+            top_100_words = set(list(frequencies.keys())[:30])  # ✅ 딕셔너리 처리
+        elif isinstance(frequencies, list) and all(isinstance(f, tuple) and len(f) == 2 for f in frequencies):
+            top_100_words = set([word for word, _ in frequencies[:30]])  # ✅ (단어, 빈도수) 튜플 처리
+        else:
+            top_100_words = set(frequencies)  # ✅ 단순 단어 리스트 처리
 
-        # 필터링된 단어들 중 빈도 상위 100개만 남기기
+        # 필터링된 단어 중 빈도 상위 100개만 남기기
         filtered_tokens = [word for word in filtered_tokens if word in top_100_words]
+
+        # 단어 개수가 2개 미만이면 네트워크 생성 불가
+        if len(filtered_tokens) < 2:
+            logger.warning(f"⚠ 동시 출현 네트워크를 만들 단어가 부족합니다.")
+            return edges  # 빈 리스트 반환
 
         # 동시 출현 네트워크 구축
         edges = [
@@ -53,39 +60,73 @@ def build_cooccurrence_network(tokens, stopwords, frequencies, window_size=3):
             for i in range(len(filtered_tokens) - window_size + 1)
             for combination in combinations(filtered_tokens[i:i + window_size], 2)
         ]
-        
+    
     except Exception as e:
         logger.error(f"[Network][build_cooccurrence_network]: {e}")
-    return edges
 
-
+    return edges  # ✅ 이제 항상 값이 존재!
 
 def compute_centrality_measures(edges, frequencies, output_path):
     """빈도 상위 100개 단어에 대해 연결 중심성과 고유벡터 중심성 계산 후 CSV 저장"""
     try:
+        if not edges:
+            logger.warning("⚠ 중심성 분석을 수행할 네트워크 엣지가 없습니다.")
+            return  # 네트워크가 없으면 분석 중단
+        
         G = nx.Graph()
         G.add_edges_from(edges)
 
         # 빈도 상위 100개 단어 가져오기
-        top_100_words = set([word for word, _ in frequencies[:100]])
+        if isinstance(frequencies, dict):
+            top_100_words = set(list(frequencies.keys())[:100])
+        elif isinstance(frequencies, list) and all(isinstance(f, tuple) and len(f) == 2 for f in frequencies):
+            top_100_words = set([word for word, _ in frequencies[:100]])
+        else:
+            top_100_words = set(frequencies)  
 
         # 연결 중심성과 고유벡터 중심성 계산
         degree_centrality = nx.degree_centrality(G)
         eigenvector_centrality = nx.eigenvector_centrality(G, max_iter=1000)
 
-        # 빈도 상위 100개 단어만 필터링하여 저장
+        # 중심성 분석 결과 저장
         df = pd.DataFrame({
             "단어": list(top_100_words),
             "연결 중심성": [degree_centrality.get(word, 0) for word in top_100_words],
             "고유벡터 중심성": [eigenvector_centrality.get(word, 0) for word in top_100_words]
         })
 
-        # 결과를 CSV로 저장
         df.to_csv(output_path, index=False, encoding="utf-8-sig")
-        logger.info(f"중심성 분석 결과 저장 완료: {output_path}")
+        logger.info(f"✅ 중심성 분석 결과 저장 완료: {output_path}")
 
     except Exception as e:
         logger.error(f"[Network][compute_centrality_measures]: {e}")
+
+# def compute_centrality_measures(edges, frequencies, output_path):
+#     """빈도 상위 100개 단어에 대해 연결 중심성과 고유벡터 중심성 계산 후 CSV 저장"""
+#     try:
+#         G = nx.Graph()
+#         G.add_edges_from(edges)
+
+#         # 빈도 상위 100개 단어 가져오기
+#         top_100_words = set([word for word, _ in frequencies[:100]])
+
+#         # 연결 중심성과 고유벡터 중심성 계산
+#         degree_centrality = nx.degree_centrality(G)
+#         eigenvector_centrality = nx.eigenvector_centrality(G, max_iter=1000)
+
+#         # 빈도 상위 100개 단어만 필터링하여 저장
+#         df = pd.DataFrame({
+#             "단어": list(top_100_words),
+#             "연결 중심성": [degree_centrality.get(word, 0) for word in top_100_words],
+#             "고유벡터 중심성": [eigenvector_centrality.get(word, 0) for word in top_100_words]
+#         })
+
+#         # 결과를 CSV로 저장
+#         df.to_csv(output_path, index=False, encoding="utf-8-sig")
+#         logger.info(f"중심성 분석 결과 저장 완료: {output_path}")
+
+#     except Exception as e:
+#         logger.error(f"[Network][compute_centrality_measures]: {e}")
         
 # def visualize_network(
 #     edges, 
@@ -228,7 +269,7 @@ def visualize_network(
     output_file=None, 
     layout='force', 
     uniform_color="lightblue", 
-    uniform_size=50, 
+    uniform_size=3000, 
     edge_scale=5
 ):
     """
@@ -260,7 +301,7 @@ def visualize_network(
         texts = []
         for node, (x, y) in pos.items():
             texts.append(plt.text(
-                x, y, node, fontsize=10, ha='center', va='center', fontweight='bold'  # 글자를 굵게(fontweight='bold')
+                x, y, node, fontsize=15, ha='center', va='center', fontweight='bold'  # 글자를 굵게(fontweight='bold')
             ))
 
         # 텍스트 겹침 방지

@@ -38,3 +38,16 @@ def get_special_tokens(text, additional_tokens=None):
         special_tokens.extend(additional_tokens)
     
     return list(set(special_tokens))
+
+
+def save_frequencies_to_text(frequencies, output_file):
+    """✅ 키워드 리스트의 모든 단어를 포함하도록 수정"""
+    if not frequencies:
+        logger.warning(f"⚠ 빈도 데이터가 없습니다. 파일을 생성하지 않습니다: {output_file}")
+        return
+
+    with open(output_file, "w", encoding="utf-8") as f:
+        for word, freq in frequencies.items():
+            f.write(f"{word}: {freq}\n")  # ✅ 0인 단어도 저장하도록 변경
+
+    logger.info(f"✅ 빈도 데이터 저장 완료: {output_file}")
