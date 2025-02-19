@@ -293,7 +293,7 @@ def visualize_network(
             pos = nx.spring_layout(G, seed=42, k=1.5)  # 노드 간 간격 넓힘
 
         # 그래프 시각화
-        plt.figure(figsize=(12, 12))
+        plt.figure(figsize=(8, 8))
         nx.draw_networkx_edges(G, pos, alpha=0.6, edge_color="gray", width=edge_widths)
         nx.draw_networkx_nodes(G, pos, node_size=uniform_size, node_color=uniform_color, alpha=0.9)
 
@@ -310,7 +310,7 @@ def visualize_network(
         # 그래프 저장
         plt.title("네트워크 그래프", fontsize=15)
         if output_file:
-            plt.savefig(output_file, format='png', dpi=300, bbox_inches='tight')
+            plt.savefig(output_file, format='png', dpi=150, bbox_inches='tight')
         plt.close()
 
     except Exception as e:

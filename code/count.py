@@ -36,10 +36,10 @@ def visualize_frequencies(frequencies, q_num, top_n=30, output_file=None):
         df = pd.DataFrame(frequencies[:top_n], columns=["단어", "빈도"])
 
         # 그래프 크기 조정
-        plt.figure(figsize=(15, 6))
+        plt.figure(figsize=(8, 6))
 
         # 막대 그래프 생성
-        ax = df.plot.bar(x="단어", y="빈도", legend=False, figsize=(15, 6))
+        ax = df.plot.bar(x="단어", y="빈도", legend=False, figsize=(8, 6))
 
         # x축 레이블 회전
         ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha='right')
@@ -51,7 +51,7 @@ def visualize_frequencies(frequencies, q_num, top_n=30, output_file=None):
 
         # 그래프 저장
         if output_file:
-            plt.savefig(output_file, format='png', dpi=300, bbox_inches='tight')
+            plt.savefig(output_file, format='png', dpi=150, bbox_inches='tight')
             logger.info(f"count_plot 저장 완료")
 
         plt.close()
